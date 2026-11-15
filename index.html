@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TempMail Pro - Webmail Sementara</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font & FontAwesome icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full bg-slate-50 text-slate-800 font-sans antialiased flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-rose-600 text-white p-2.5 rounded-xl shadow-md shadow-rose-600/20 flex items-center justify-center">
+                    <i class="fa-solid fa-envelope-open-text text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 leading-tight">TempMail Pro</h1>
+                    <p class="text-xs text-slate-500">Layanan Kotak Masuk Sementara Aman & Cepat</p>
+                </div>
+            </div>
+            <!-- Quick Status Badge -->
+            <div class="hidden sm:flex items-center space-x-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-medium border border-emerald-200">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>API Connected</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container Layout -->
+    <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-64 flex-shrink-0">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sticky top-24">
+                <div class="space-y-1">
+                    <button onclick="switchTab('create')" id="nav-create" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 bg-rose-600 text-white shadow-md shadow-rose-600/20">
+                        <i class="fa-solid fa-wand-magic-sparkles w-5 text-center"></i>
+                        <span>Buat Email Baru</span>
+                    </button>
+                    <button onclick="switchTab('inbox')" id="nav-inbox" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-inbox w-5 text-center"></i>
+                        <span>Cek Kotak Masuk</span>
+                        <span id="badge-inbox" class="ml-auto bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full hidden">0</span>
+                    </button>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100">
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/60 text-xs text-slate-500 space-y-2">
+                        <div class="font-semibold text-slate-700 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-shield-halved text-rose-600"></i>
+                            <span>Informasi Aman</span>
+                        </div>
+                        <p>Email otomatis bersifat sementara. Gunakan untuk verifikasi akun atau uji coba tanpa spam.</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="flex-1 min-w-0">
+            
+            <!-- TAB 1: BUAT EMAIL -->
+            <section id="tab-create" class="space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                    <div class="max-w-xl">
+                        <div class="inline-block p-3 rounded-2xl bg-rose-50 text-rose-600 mb-4">
+                            <i class="fa-solid fa-at text-2xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-slate-900">Buat Alamat Email Sementara</h2>
+                        <p class="text-slate-500 mt-1 text-sm">Hasilkan alamat email instan secara acak untuk menerima pesan masuk dalam hitungan detik.</p>
+                        
+                        <div class="mt-6">
+                            <button onclick="generateEmail()" id="btn-generate" class="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg shadow-rose-600/30 transition-all duration-200 active:scale-95">
+                                <i class="fa-solid fa-plus-circle"></i>
+                                <span>Generate Alamat Email</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Result Box (Hidden by default) -->
+                    <div id="create-result-box" class="mt-8 pt-6 border-t border-slate-100 hidden">
+                        <h3 class="text-sm font-semibold text-slate-700 mb-3">Email Berhasil Dibuat:</h3>
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                            <div class="flex items-center space-x-3 overflow-hidden">
+                                <div class="bg-rose-100 text-rose-600 p-2.5 rounded-lg flex-shrink-0">
+                                    <i class="fa-solid fa-envelope"></i>
+                                </div>
+                                <span id="generated-email-text" class="font-mono font-bold text-slate-800 text-base truncate select-all"></span>
+                            </div>
+                            <div class="flex items-center space-x-2 flex-shrink-0">
+                                <button onclick="copyGeneratedEmail()" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-medium px-4 py-2 rounded-lg text-sm inline-flex items-center space-x-2 transition-colors">
+                                    <i class="fa-regular fa-copy"></i>
+                                    <span>Salin</span>
+                                </button>
+                                <button onclick="checkThisEmail()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg text-sm inline-flex items-center space-x-2 transition-colors shadow-sm">
+                                    <i class="fa-solid fa-inbox"></i>
+                                    <span>Cek Pesan</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Card Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start space-x-4">
+                        <div class="bg-indigo-50 text-indigo-600 p-3 rounded-xl">
+                            <i class="fa-solid fa-bolt text-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-800 text-sm">Instan & Otomatis</h4>
+                            <p class="text-xs text-slate-500 mt-1">Tanpa registrasi sandi atau verifikasi rumit. Langsung pakai.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start space-x-4">
+                        <div class="bg-amber-50 text-amber-600 p-3 rounded-xl">
+                            <i class="fa-solid fa-shield-cat text-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-800 text-sm">Privasi Terjaga</h4>
+                            <p class="text-xs text-slate-500 mt-1">Lindungi kotak masuk utama Anda dari spam iklan dan pelacakan.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: CEK EMAIL MASUK -->
+            <section id="tab-inbox" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-900">Kotak Masuk Email</h2>
+                            <p class="text-slate-500 text-sm mt-1">Masukkan alamat email untuk memantau pesan masuk secara real-time.</p>
+                        </div>
+                        <!-- Auto Refresh Toggle -->
+                        <div class="flex items-center space-x-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200 self-start md:self-auto">
+                            <span class="text-xs font-medium text-slate-600">Auto-refresh (5s)</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="auto-refresh-toggle" onchange="toggleAutoRefresh()" class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-600"></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Input Email Form -->
+                    <form onsubmit="handleCheckInbox(event)" class="flex flex-col sm:flex-row gap-3">
+                        <div class="relative flex-1">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-envelope"></i>
+                            </div>
+                            <input type="email" id="inbox-email-input" placeholder="contoh: user@workers.dev" required
+                                class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-600 focus:bg-white transition-all">
+                        </div>
+                        <button type="submit" id="btn-fetch-inbox" class="inline-flex items-center justify-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-all active:scale-95 flex-shrink-0">
+                            <i class="fa-solid fa-rotate"></i>
+                            <span>Cek Pesan</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Messages List Container -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-semibold text-slate-700 text-sm">Daftar Pesan</span>
+                            <span id="message-count" class="bg-slate-200 text-slate-700 text-xs px-2 py-0.5 rounded-full font-medium">0 Pesan</span>
+                        </div>
+                        <button onclick="fetchMessages()" class="text-xs text-rose-600 hover:text-rose-700 font-medium inline-flex items-center space-x-1">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            <span>Muat Ulang</span>
+                        </button>
+                    </div>
+
+                    <!-- State: Empty / Loading / List -->
+                    <div id="inbox-content" class="p-8 text-center">
+                        <div class="max-w-sm mx-auto py-12">
+                            <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                                <i class="fa-regular fa-folder-open"></i>
+                            </div>
+                            <h3 class="text-base font-semibold text-slate-800">Belum Ada Pesan</h3>
+                            <p class="text-sm text-slate-500 mt-1">Masukkan alamat email di atas lalu klik "Cek Pesan" untuk melihat pesan masuk.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Message Detail Modal -->
+    <div id="message-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                <h3 id="modal-subject" class="font-bold text-slate-900 text-base truncate pr-4">Detail Pesan</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4 flex-1">
+                <div class="flex items-center justify-between text-xs text-slate-500 pb-3 border-b border-slate-100">
+                    <div>
+                        <span class="font-medium text-slate-700">Dari:</span> <span id="modal-sender" class="text-slate-900 font-mono"></span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-slate-700">Waktu:</span> <span id="modal-date"></span>
+                    </div>
+                </div>
+                <div class="prose max-w-none text-slate-700 text-sm leading-relaxed" id="modal-body">
+                    <!-- Body content or HTML preview -->
+                </div>
+            </div>
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button onclick="closeModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2 rounded-xl text-sm transition-colors">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+            <span id="toast-message">Berhasil disalin!</span>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        const API_AUTH_HEADER = 'Bearer bilangdulu';
+        const API_BASE_URL = 'https://temp-mail-bot.buatjake0-1b1.workers.dev/api';
+        
+        let currentEmail = '';
+        let autoRefreshInterval = null;
+        let messagesCache = [];
+
+        // Tab Switcher
+        function switchTab(tabName) {
+            const tabCreate = document.getElementById('tab-create');
+            const tabInbox = document.getElementById('tab-inbox');
+            const navCreate = document.getElementById('nav-create');
+            const navInbox = document.getElementById('nav-inbox');
+
+            if (tabName === 'create') {
+                tabCreate.classList.remove('hidden');
+                tabInbox.classList.add('hidden');
+                
+                navCreate.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 bg-rose-600 text-white shadow-md shadow-rose-600/20";
+                navInbox.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-600 hover:bg-slate-100";
+            } else {
+                tabCreate.classList.add('hidden');
+                tabInbox.classList.remove('hidden');
+                
+                navInbox.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 bg-rose-600 text-white shadow-md shadow-rose-600/20";
+                navCreate.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-600 hover:bg-slate-100";
+                
+                if (currentEmail) {
+                    document.getElementById('inbox-email-input').value = currentEmail;
+                    fetchMessages();
+                }
+            }
+        }
+
+        // Show Toast Notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = message;
+            if (type === 'success') {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else {
+                toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Generate Random Email
+        async function generateEmail() {
+            const btn = document.getElementById('btn-generate');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i><span>Membuat Email...</span>`;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/create-random`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': API_AUTH_HEADER,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({})
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Gagal terhubung ke server (${response.status})`);
+                }
+
+                const data = await response.json();
+                // Extract email based on typical structure or fallback
+                const email = data.email || data.address || (typeof data === 'string' ? data : null);
+
+                if (!email) {
+                    throw new Error('Format respons server tidak valid.');
+                }
+
+                currentEmail = email;
+                document.getElementById('generated-email-text').textContent = email;
+                document.getElementById('create-result-box').classList.remove('hidden');
+                showToast('Email sementara berhasil dibuat!');
+            } catch (error) {
+                console.error(error);
+                showToast(error.message || 'Terjadi kesalahan jaringan.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-plus-circle"></i><span>Generate Alamat Email</span>`;
+            }
+        }
+
+        // Copy Generated Email
+        function copyGeneratedEmail() {
+            const emailText = document.getElementById('generated-email-text').textContent;
+            if (!emailText) return;
+
+            // Fallback for iframe copy compatibility
+            const textarea = document.createElement('textarea');
+            textarea.value = emailText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Alamat email berhasil disalin ke clipboard!');
+            } catch (err) {
+                showToast('Gagal menyalin teks.', 'error');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // Direct action from Create tab to Inbox tab
+        function checkThisEmail() {
+            if (!currentEmail) return;
+            switchTab('inbox');
+            document.getElementById('inbox-email-input').value = currentEmail;
+            fetchMessages();
+        }
+
+        // Handle Inbox Search Submit
+        function handleCheckInbox(event) {
+            event.preventDefault();
+            fetchMessages();
+        }
+
+        // Fetch Messages API
+        async function fetchMessages() {
+            const emailInput = document.getElementById('inbox-email-input').value.trim();
+            if (!emailInput) {
+                showToast('Masukkan alamat email terlebih dahulu!', 'error');
+                return;
+            }
+
+            currentEmail = emailInput;
+            const inboxContent = document.getElementById('inbox-content');
+            inboxContent.innerHTML = `
+                <div class="py-12 flex flex-col items-center justify-center space-y-3">
+                    <i class="fa-solid fa-spinner animate-spin text-rose-600 text-2xl"></i>
+                    <p class="text-sm text-slate-500">Memuat pesan masuk...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/messages?email=${encodeURIComponent(emailInput)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': API_AUTH_HEADER
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Gagal mengambil pesan (${response.status})`);
+                }
+
+                const data = await response.json();
+                // Handle different array responses (messages / data / direct array)
+                messagesCache = Array.isArray(data) ? data : (data.messages || data.data || []);
+                
+                renderMessages(messagesCache);
+            } catch (error) {
+                console.error(error);
+                inboxContent.innerHTML = `
+                    <div class="py-12 text-center">
+                        <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <h4 class="font-semibold text-slate-800">Gagal Memuat Pesan</h4>
+                        <p class="text-xs text-slate-500 mt-1">${error.message || 'Periksa kembali alamat email atau koneksi Anda.'}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Render Messages List
+        function renderMessages(messages) {
+            const inboxContent = document.getElementById('inbox-content');
+            const messageCountBadge = document.getElementById('message-count');
+            const badgeInbox = document.getElementById('badge-inbox');
+
+            messageCountBadge.textContent = `${messages.length} Pesan`;
+            if (messages.length > 0) {
+                badgeInbox.textContent = messages.length;
+                badgeInbox.classList.remove('hidden');
+            } else {
+                badgeInbox.classList.add('hidden');
+            }
+
+            if (!messages || messages.length === 0) {
+                inboxContent.innerHTML = `
+                    <div class="max-w-sm mx-auto py-12">
+                        <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                            <i class="fa-regular fa-envelope-open"></i>
+                        </div>
+                        <h3 class="text-base font-semibold text-slate-800">Kotak Masuk Kosong</h3>
+                        <p class="text-sm text-slate-500 mt-1">Belum ada pesan yang diterima pada alamat email ini.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="divide-y divide-slate-100 text-left">';
+            messages.forEach((msg, index) => {
+                const sender = msg.from || msg.sender || 'Pengirim Tidak Dikenal';
+                const subject = msg.subject || '(Tanpa Subjek)';
+                const date = msg.date || msg.created_at || 'Baru saja';
+                const snippet = msg.snippet || msg.body || msg.text || 'Tidak ada pratinjau pesan...';
+
+                html += `
+                    <div onclick="openMessage(${index})" class="p-4 sm:px-6 hover:bg-slate-50/80 transition-colors cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-2 group">
+                        <div class="flex items-start space-x-3 min-w-0 flex-1">
+                            <div class="bg-rose-50 text-rose-600 p-2.5 rounded-xl flex-shrink-0 mt-0.5 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+                                <i class="fa-regular fa-envelope"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center space-x-2">
+                                    <span class="font-semibold text-slate-800 text-sm truncate">${escapeHtml(sender)}</span>
+                                </div>
+                                <h4 class="font-medium text-slate-900 text-sm mt-0.5 truncate">${escapeHtml(subject)}</h4>
+                                <p class="text-xs text-slate-500 truncate mt-0.5">${escapeHtml(snippet)}</p>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-400 whitespace-nowrap self-end sm:self-center">
+                            ${escapeHtml(date)}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            inboxContent.innerHTML = html;
+        }
+
+        // Open Message Detail Modal
+        function openMessage(index) {
+            const msg = messagesCache[index];
+            if (!msg) return;
+
+            document.getElementById('modal-subject').textContent = msg.subject || '(Tanpa Subjek)';
+            document.getElementById('modal-sender').textContent = msg.from || msg.sender || 'Tidak diketahui';
+            document.getElementById('modal-date').textContent = msg.date || msg.created_at || '-';
+            
+            const bodyContainer = document.getElementById('modal-body');
+            const rawBody = msg.body || msg.html || msg.text || msg.snippet || '<p class="text-slate-400 italic">Tidak ada konten pesan.</p>';
+            
+            // Check if body contains HTML tags
+            if (/<[a-z][\s\S]*>/i.test(rawBody)) {
+                bodyContainer.innerHTML = rawBody;
+            } else {
+                bodyContainer.textContent = rawBody;
+            }
+
+            document.getElementById('message-modal').classList.remove('hidden');
+        }
+
+        // Close Modal
+        function closeModal() {
+            document.getElementById('message-modal').classList.add('hidden');
+        }
+
+        // Auto Refresh Polling
+        function toggleAutoRefresh() {
+            const isChecked = document.getElementById('auto-refresh-toggle').checked;
+            if (isChecked) {
+                if (!currentEmail) {
+                    showToast('Masukkan email terlebih dahulu untuk auto-refresh!', 'error');
+                    document.getElementById('auto-refresh-toggle').checked = false;
+                    return;
+                }
+                showToast('Auto-refresh diaktifkan (tiap 5 detik)');
+                autoRefreshInterval = setInterval(() => {
+                    if (currentEmail) {
+                        fetchMessagesSilently();
+                    }
+                }, 5000);
+            } else {
+                showToast('Auto-refresh dimatikan');
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        // Silent fetch for background polling
+        async function fetchMessagesSilently() {
+            if (!currentEmail) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/messages?email=${encodeURIComponent(currentEmail)}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': API_AUTH_HEADER }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const newMessages = Array.isArray(data) ? data : (data.messages || data.data || []);
+                    if (newMessages.length !== messagesCache.length) {
+                        messagesCache = newMessages;
+                        renderMessages(messagesCache);
+                        showToast('Pesan baru diterima!', 'success');
+                    }
+                }
+            } catch (e) {
+                console.error('Silent refresh error:', e);
+            }
+        }
+
+        // Utility to escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.toString()
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>
