@@ -43,6 +43,31 @@
         </div>
     </header>
 
+    <!-- Settings / Config Bar for Token & CORS Proxy -->
+    <div class="bg-slate-100 border-b border-slate-200 py-3 px-4 sm:px-8 text-xs text-slate-600">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                <div class="flex items-center space-x-1.5">
+                    <span class="font-semibold text-slate-700"><i class="fa-solid fa-key text-rose-600 mr-1"></i>Token:</span>
+                    <input type="text" id="config-token" value="bilangdulu" onchange="saveConfig()" 
+                        class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono w-32 focus:outline-none focus:ring-1 focus:ring-rose-600">
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="font-semibold text-slate-700"><i class="fa-solid fa-server text-rose-600 mr-1"></i>Base URL:</span>
+                    <input type="text" id="config-url" value="https://temp-mail-bot.buatjake0-1b1.workers.dev/api" onchange="saveConfig()" 
+                        class="bg-white border border-slate-300 rounded-lg px-2 py-1 text-xs font-mono w-56 sm:w-72 focus:outline-none focus:ring-1 focus:ring-rose-600">
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 self-start md:self-auto bg-white px-3 py-1.5 rounded-lg border border-slate-300 shadow-sm">
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="config-proxy" onchange="saveConfig()" class="sr-only peer" checked>
+                    <div class="w-8 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-rose-600"></div>
+                </label>
+                <span class="font-medium text-slate-700">Gunakan Proxy CORS (Solusi Error CORS Browser)</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Container Layout -->
     <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
         
@@ -240,18 +265,76 @@
 
     <!-- JavaScript Application Logic -->
     <script>
-        const API_AUTH_HEADER = 'Bearer bilangdulu';
-        const API_BASE_URL = 'https://temp-mail-bot.buatjake0-1b1.workers.dev/api';
-        
         let currentEmail = '';
         let autoRefreshInterval = null;
         let messagesCache = [];
         let emailHistory = JSON.parse(localStorage.getItem('tempmail_history') || '[]');
 
-        // Initialize history view on load
+        // Initialize configuration and history view on load
         document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
             renderEmailHistory();
         });
+
+        function loadConfig() {
+            const savedToken = localStorage.getItem('tempmail_token');
+            const savedUrl = localStorage.getItem('tempmail_url');
+            const savedProxy = localStorage.getItem('tempmail_proxy');
+
+            if (savedToken) document.getElementById('config-token').value = savedToken;
+            if (savedUrl) document.getElementById('config-url').value = savedUrl;
+            if (savedProxy !== null) {
+                document.getElementById('config-proxy').checked = savedProxy === 'true';
+            }
+        }
+
+        function saveConfig() {
+            const token = document.getElementById('config-token').value.trim();
+            const url = document.getElementById('config-url').value.trim();
+            const useProxy = document.getElementById('config-proxy').checked;
+
+            localStorage.setItem('tempmail_token', token);
+            localStorage.setItem('tempmail_url', url);
+            localStorage.setItem('tempmail_proxy', useProxy);
+            showToast('Konfigurasi berhasil disimpan');
+        }
+
+        function getApiSettings() {
+            return {
+                token: document.getElementById('config-token').value.trim() || 'bilangdulu',
+                baseUrl: document.getElementById('config-url').value.trim() || 'https://temp-mail-bot.buatjake0-1b1.workers.dev/api',
+                useProxy: document.getElementById('config-proxy').checked
+            };
+        }
+
+        async function apiFetch(endpoint, options = {}) {
+            const settings = getApiSettings();
+            let targetUrl = `${settings.baseUrl}${endpoint}`;
+            
+            const headers = {
+                'Authorization': `Bearer ${settings.token}`,
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+
+            let fetchUrl = targetUrl;
+            let fetchOptions = {
+                method: options.method || 'GET',
+                headers: headers
+            };
+
+            if (options.body) {
+                fetchOptions.body = options.body;
+            }
+
+            // If CORS proxy is enabled, use corsproxy.io
+            if (settings.useProxy) {
+                fetchUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+            }
+
+            const response = await fetch(fetchUrl, fetchOptions);
+            return response;
+        }
 
         // Tab Switcher
         function switchTab(tabName) {
@@ -388,17 +471,13 @@
             btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i><span>Membuat Email...</span>`;
 
             try {
-                const response = await fetch(`${API_BASE_URL}/create-random`, {
+                const response = await apiFetch('/create-random', {
                     method: 'POST',
-                    headers: {
-                        'Authorization': API_AUTH_HEADER,
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify({})
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Server merespons status ${response.status}. Pastikan token Bearer benar.`);
+                    throw new Error(`Server merespons status ${response.status}. Pastikan token benar.`);
                 }
 
                 const data = await response.json();
@@ -418,7 +497,7 @@
                 console.error(error);
                 let msg = error.message || 'Terjadi kesalahan jaringan.';
                 if (error.name === 'TypeError' && msg.includes('Failed to fetch')) {
-                    msg = 'Gagal terhubung (CORS / Cloudflare Worker memblokir request langsung dari browser).';
+                    msg = 'Gagal terhubung. Pastikan "Gunakan Proxy CORS" diaktifkan di atas untuk melewati pembatasan browser.';
                 }
                 showToast(msg, 'error');
             } finally {
@@ -468,11 +547,8 @@
             `;
 
             try {
-                const response = await fetch(`${API_BASE_URL}/messages?email=${encodeURIComponent(emailInput)}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': API_AUTH_HEADER
-                    }
+                const response = await apiFetch(`/messages?email=${encodeURIComponent(emailInput)}`, {
+                    method: 'GET'
                 });
 
                 if (!response.ok) {
@@ -487,7 +563,7 @@
                 console.error(error);
                 let errDetail = error.message || 'Periksa kembali alamat email atau koneksi Anda.';
                 if (error.name === 'TypeError' && errDetail.includes('Failed to fetch')) {
-                    errDetail = 'Koneksi diblokir CORS browser. Pastikan Cloudflare Worker mengizinkan origin akses web.';
+                    errDetail = 'Koneksi diblokir CORS browser. Aktifkan opsi "Gunakan Proxy CORS" di bagian atas halaman.';
                 }
                 inboxContent.innerHTML = `
                     <div class="py-12 text-center max-w-md mx-auto px-4">
@@ -612,9 +688,8 @@
         async function fetchMessagesSilently() {
             if (!currentEmail) return;
             try {
-                const response = await fetch(`${API_BASE_URL}/messages?email=${encodeURIComponent(currentEmail)}`, {
-                    method: 'GET',
-                    headers: { 'Authorization': API_AUTH_HEADER }
+                const response = await apiFetch(`/messages?email=${encodeURIComponent(currentEmail)}`, {
+                    method: 'GET'
                 });
                 if (response.ok) {
                     const data = await response.json();
