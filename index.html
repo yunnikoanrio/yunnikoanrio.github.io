@@ -118,25 +118,17 @@
                     </div>
                 </div>
 
-                <!-- Features Card Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start space-x-4">
-                        <div class="bg-indigo-50 text-indigo-600 p-3 rounded-xl">
-                            <i class="fa-solid fa-bolt text-lg"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-slate-800 text-sm">Instan & Otomatis</h4>
-                            <p class="text-xs text-slate-500 mt-1">Tanpa registrasi sandi atau verifikasi rumit. Langsung pakai.</p>
-                        </div>
+                <!-- History / Saved Emails Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-900 text-base flex items-center space-x-2">
+                            <i class="fa-solid fa-history text-rose-600"></i>
+                            <span>Riwayat Email Yang Pernah Dibuat</span>
+                        </h3>
+                        <button onclick="clearHistory()" class="text-xs text-slate-400 hover:text-rose-600 transition-colors">Hapus Riwayat</button>
                     </div>
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start space-x-4">
-                        <div class="bg-amber-50 text-amber-600 p-3 rounded-xl">
-                            <i class="fa-solid fa-shield-cat text-lg"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-slate-800 text-sm">Privasi Terjaga</h4>
-                            <p class="text-xs text-slate-500 mt-1">Lindungi kotak masuk utama Anda dari spam iklan dan pelacakan.</p>
-                        </div>
+                    <div id="email-history-list" class="space-y-2">
+                        <p class="text-xs text-slate-400 italic">Belum ada riwayat tersimpan di perangkat ini.</p>
                     </div>
                 </div>
             </section>
@@ -147,7 +139,7 @@
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                         <div>
                             <h2 class="text-2xl font-bold text-slate-900">Kotak Masuk Email</h2>
-                            <p class="text-slate-500 text-sm mt-1">Masukkan alamat email untuk memantau pesan masuk secara real-time.</p>
+                            <p class="text-slate-500 text-sm mt-1">Masukkan alamat email atau pilih dari riwayat untuk memantau pesan.</p>
                         </div>
                         <!-- Auto Refresh Toggle -->
                         <div class="flex items-center space-x-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200 self-start md:self-auto">
@@ -159,19 +151,25 @@
                         </div>
                     </div>
 
-                    <!-- Input Email Form -->
-                    <form onsubmit="handleCheckInbox(event)" class="flex flex-col sm:flex-row gap-3">
-                        <div class="relative flex-1">
-                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                                <i class="fa-solid fa-envelope"></i>
+                    <!-- Input Email Form with Quick Selector -->
+                    <form onsubmit="handleCheckInbox(event)" class="space-y-3">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="relative flex-1">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                    <i class="fa-solid fa-envelope"></i>
+                                </div>
+                                <input type="email" id="inbox-email-input" placeholder="contoh: user@workers.dev" required
+                                    class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-600 focus:bg-white transition-all">
                             </div>
-                            <input type="email" id="inbox-email-input" placeholder="contoh: user@workers.dev" required
-                                class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-600 focus:bg-white transition-all">
+                            <button type="submit" id="btn-fetch-inbox" class="inline-flex items-center justify-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-all active:scale-95 flex-shrink-0">
+                                <i class="fa-solid fa-rotate"></i>
+                                <span>Cek Pesan</span>
+                            </button>
                         </div>
-                        <button type="submit" id="btn-fetch-inbox" class="inline-flex items-center justify-center space-x-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-all active:scale-95 flex-shrink-0">
-                            <i class="fa-solid fa-rotate"></i>
-                            <span>Cek Pesan</span>
-                        </button>
+                        <!-- Quick Select Dropdown Pills -->
+                        <div id="quick-emails-bar" class="flex flex-wrap gap-2 pt-1">
+                            <!-- Dynamic history buttons inserted here -->
+                        </div>
                     </form>
                 </div>
 
@@ -248,6 +246,12 @@
         let currentEmail = '';
         let autoRefreshInterval = null;
         let messagesCache = [];
+        let emailHistory = JSON.parse(localStorage.getItem('tempmail_history') || '[]');
+
+        // Initialize history view on load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderEmailHistory();
+        });
 
         // Tab Switcher
         function switchTab(tabName) {
@@ -262,6 +266,7 @@
                 
                 navCreate.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 bg-rose-600 text-white shadow-md shadow-rose-600/20";
                 navInbox.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-600 hover:bg-slate-100";
+                renderEmailHistory();
             } else {
                 tabCreate.classList.add('hidden');
                 tabInbox.classList.remove('hidden');
@@ -269,6 +274,7 @@
                 navInbox.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 bg-rose-600 text-white shadow-md shadow-rose-600/20";
                 navCreate.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 text-slate-600 hover:bg-slate-100";
                 
+                renderQuickEmailsBar();
                 if (currentEmail) {
                     document.getElementById('inbox-email-input').value = currentEmail;
                     fetchMessages();
@@ -292,7 +298,87 @@
             toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
             setTimeout(() => {
                 toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
-            }, 3000);
+            }, 3500);
+        }
+
+        // Save Email to LocalStorage History
+        function saveEmailToHistory(email) {
+            if (!email) return;
+            if (!emailHistory.includes(email)) {
+                emailHistory.unshift(email);
+                if (emailHistory.length > 15) emailHistory.pop(); // limit history
+                localStorage.setItem('tempmail_history', JSON.stringify(emailHistory));
+            }
+        }
+
+        // Render Email History in Create Tab
+        function renderEmailHistory() {
+            const container = document.getElementById('email-history-list');
+            if (emailHistory.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 italic">Belum ada riwayat tersimpan di perangkat ini.</p>`;
+                return;
+            }
+
+            let html = '<div class="divide-y divide-slate-100 max-h-60 overflow-y-auto">';
+            emailHistory.forEach(email => {
+                html += `
+                    <div class="py-2.5 flex items-center justify-between text-sm">
+                        <span class="font-mono text-slate-700 truncate pr-2">${escapeHtml(email)}</span>
+                        <div class="flex items-center space-x-2 flex-shrink-0">
+                            <button onclick="selectHistoryEmail('${email}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg transition-colors">Gunakan</button>
+                            <button onclick="copySpecificEmail('${email}')" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 px-2.5 py-1 rounded-lg transition-colors">Salin</button>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderQuickEmailsBar() {
+            const bar = document.getElementById('quick-emails-bar');
+            if (emailHistory.length === 0) {
+                bar.innerHTML = '<span class="text-xs text-slate-400 italic">Belum ada riwayat email cepat.</span>';
+                return;
+            }
+
+            let html = '<span class="text-xs text-slate-500 font-medium self-center mr-1">Riwayat:</span>';
+            emailHistory.slice(0, 5).forEach(email => {
+                html += `
+                    <button type="button" onclick="selectHistoryEmail('${email}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-2.5 py-1 rounded-full font-mono transition-colors truncate max-w-[200px]">
+                        ${escapeHtml(email)}
+                    </button>
+                `;
+            });
+            bar.innerHTML = html;
+        }
+
+        function selectHistoryEmail(email) {
+            currentEmail = email;
+            document.getElementById('inbox-email-input').value = email;
+            switchTab('inbox');
+            fetchMessages();
+        }
+
+        function copySpecificEmail(email) {
+            const textarea = document.createElement('textarea');
+            textarea.value = email;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Email disalin ke clipboard!');
+            } catch (err) {
+                showToast('Gagal menyalin.', 'error');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function clearHistory() {
+            emailHistory = [];
+            localStorage.removeItem('tempmail_history');
+            renderEmailHistory();
+            showToast('Riwayat berhasil dibersihkan');
         }
 
         // Generate Random Email
@@ -312,24 +398,29 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Gagal terhubung ke server (${response.status})`);
+                    throw new Error(`Server merespons status ${response.status}. Pastikan token Bearer benar.`);
                 }
 
                 const data = await response.json();
-                // Extract email based on typical structure or fallback
                 const email = data.email || data.address || (typeof data === 'string' ? data : null);
 
                 if (!email) {
-                    throw new Error('Format respons server tidak valid.');
+                    throw new Error('Format respons server tidak mengandung alamat email.');
                 }
 
                 currentEmail = email;
+                saveEmailToHistory(email);
                 document.getElementById('generated-email-text').textContent = email;
                 document.getElementById('create-result-box').classList.remove('hidden');
+                renderEmailHistory();
                 showToast('Email sementara berhasil dibuat!');
             } catch (error) {
                 console.error(error);
-                showToast(error.message || 'Terjadi kesalahan jaringan.', 'error');
+                let msg = error.message || 'Terjadi kesalahan jaringan.';
+                if (error.name === 'TypeError' && msg.includes('Failed to fetch')) {
+                    msg = 'Gagal terhubung (CORS / Cloudflare Worker memblokir request langsung dari browser).';
+                }
+                showToast(msg, 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i class="fa-solid fa-plus-circle"></i><span>Generate Alamat Email</span>`;
@@ -340,19 +431,7 @@
         function copyGeneratedEmail() {
             const emailText = document.getElementById('generated-email-text').textContent;
             if (!emailText) return;
-
-            // Fallback for iframe copy compatibility
-            const textarea = document.createElement('textarea');
-            textarea.value = emailText;
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showToast('Alamat email berhasil disalin ke clipboard!');
-            } catch (err) {
-                showToast('Gagal menyalin teks.', 'error');
-            }
-            document.body.removeChild(textarea);
+            copySpecificEmail(emailText);
         }
 
         // Direct action from Create tab to Inbox tab
@@ -378,6 +457,8 @@
             }
 
             currentEmail = emailInput;
+            saveEmailToHistory(emailInput);
+            
             const inboxContent = document.getElementById('inbox-content');
             inboxContent.innerHTML = `
                 <div class="py-12 flex flex-col items-center justify-center space-y-3">
@@ -399,19 +480,22 @@
                 }
 
                 const data = await response.json();
-                // Handle different array responses (messages / data / direct array)
                 messagesCache = Array.isArray(data) ? data : (data.messages || data.data || []);
                 
                 renderMessages(messagesCache);
             } catch (error) {
                 console.error(error);
+                let errDetail = error.message || 'Periksa kembali alamat email atau koneksi Anda.';
+                if (error.name === 'TypeError' && errDetail.includes('Failed to fetch')) {
+                    errDetail = 'Koneksi diblokir CORS browser. Pastikan Cloudflare Worker mengizinkan origin akses web.';
+                }
                 inboxContent.innerHTML = `
-                    <div class="py-12 text-center">
+                    <div class="py-12 text-center max-w-md mx-auto px-4">
                         <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
                             <i class="fa-solid fa-triangle-exclamation"></i>
                         </div>
                         <h4 class="font-semibold text-slate-800">Gagal Memuat Pesan</h4>
-                        <p class="text-xs text-slate-500 mt-1">${error.message || 'Periksa kembali alamat email atau koneksi Anda.'}</p>
+                        <p class="text-xs text-slate-500 mt-1">${escapeHtml(errDetail)}</p>
                     </div>
                 `;
             }
